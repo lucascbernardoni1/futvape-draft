@@ -1,152 +1,150 @@
 <template>
     <div v-if="isHost">
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">Room Setup</h2>
-            <div class="flex items-center gap-4">
-              <div class="bg-gray-700 px-4 py-2 rounded-md">
-                <span class="text-sm text-gray-400">Room Code:</span>
-                <span class="ml-2 font-mono font-bold">{{ roomId }}</span>
+      <div class="max-w-4xl mx-auto space-y-6">
+        <Card>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h2 class="text-2xl font-bold">Room Setup</h2>
+              <div class="flex items-center gap-4">
+                <div class="bg-gray-700 px-4 py-2 rounded-md">
+                  <span class="text-sm text-gray-400">Room Code:</span>
+                  <span class="ml-2 font-mono font-bold">{{ roomId }}</span>
+                </div>
+                <Button
+                  @click="copyRoomLink"
+                  variant="ghost"
+                  size="sm"
+                  title="Copy invite link"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </Button>
               </div>
-              <button
-                @click="copyRoomLink"
-                class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-md transition-colors"
-                title="Copy invite link"
+            </div>
+          </template>
+
+          <div class="space-y-8">
+            <div>
+              <h3 class="text-lg font-semibold mb-4">Add Players to Draft Pool</h3>
+              <div class="flex gap-2 mb-4">
+                <Input
+                  v-model="newPlayer.name"
+                  placeholder="Player name"
+                  class="flex-1"
+                />
+                <Input
+                  v-model="newPlayer.position"
+                  placeholder="Position"
+                  class="w-24"
+                />
+                <Input
+                  v-model="newPlayer.team"
+                  placeholder="Team"
+                  class="w-24"
+                />
+                <Button
+                  @click="addPlayer"
+                  :disabled="!newPlayer.name"
+                  variant="success"
+                >
+                  Add
+                </Button>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-2">Or import players (CSV format)</label>
+                <textarea
+                  v-model="bulkImport"
+                  class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Name, Position, Team (one player per line)"
+                  rows="3"
+                ></textarea>
+                <div class="mt-2 flex justify-end">
+                  <Button
+                    @click="importPlayers"
+                    size="sm"
+                  >
+                    Import
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Player Pool ({{ playerPool.length }})</h3>
+                <div class="flex gap-2">
+                  <Button
+                    @click="sortPlayersByName"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Sort by Name
+                  </Button>
+                  <Button
+                    @click="sortPlayersByPosition"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Sort by Position
+                  </Button>
+                </div>
+              </div>
+              
+              <Table
+                :headers="[
+                  { key: 'name', label: 'Name' },
+                  { key: 'position', label: 'Position' },
+                  { key: 'team', label: 'Team' },
+                  { key: 'actions', label: 'Actions', class: 'w-16' }
+                ]"
+                :rows="playerPool"
               >
-                <ClipboardIcon class="w-5 h-5" />
-              </button>
+                <template #actions="{ row }">
+                  <Button
+                    @click="removePlayer(row.id)"
+                    variant="danger"
+                    size="sm"
+                    title="Remove player"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                  </Button>
+                </template>
+              </Table>
             </div>
-          </div>
-          
-          <div class="mb-8">
-            <h3 class="text-lg font-semibold mb-4">Add Players to Draft Pool</h3>
-            <div class="flex gap-2 mb-4">
-              <input
-                v-model="newPlayer.name"
-                type="text"
-                class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Player name"
-              />
-              <input
-                v-model="newPlayer.position"
-                type="text"
-                class="w-24 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Position"
-              />
-              <input
-                v-model="newPlayer.team"
-                type="text"
-                class="w-24 px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Team"
-              />
-              <button
-                @click="addPlayer"
-                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
-                :disabled="!newPlayer.name"
+            
+            <div class="flex justify-between items-center">
+              <div class="text-gray-400" v-if="!currentRoom.guestId">
+                Waiting for opponent to join...
+              </div>
+              <div class="text-green-400" v-else>
+                {{ guestName }} has joined the room!
+              </div>
+              
+              <Button
+                @click="startDraft"
+                :disabled="playerPool.length === 0 || !currentRoom.guestId"
+                size="lg"
               >
-                Add
-              </button>
-            </div>
-            
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Or import players (CSV format)</label>
-              <textarea
-                v-model="bulkImport"
-                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Name, Position, Team (one player per line)"
-                rows="3"
-              ></textarea>
-              <div class="mt-2 flex justify-end">
-                <button
-                  @click="importPlayers"
-                  class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm transition-colors"
-                >
-                  Import
-                </button>
-              </div>
+                Start Draft!
+              </Button>
             </div>
           </div>
-          
-          <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold">Player Pool ({{ playerPool.length }})</h3>
-              <div class="flex gap-2">
-                <button
-                  @click="sortPlayersByName"
-                  class="bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded-md text-sm transition-colors"
-                >
-                  Sort by Name
-                </button>
-                <button
-                  @click="sortPlayersByPosition"
-                  class="bg-gray-700 hover:bg-gray-600 text-white py-1 px-3 rounded-md text-sm transition-colors"
-                >
-                  Sort by Position
-                </button>
-              </div>
-            </div>
-            
-            <div class="bg-gray-700 rounded-md overflow-hidden">
-              <table class="w-full text-left">
-                <thead class="bg-gray-600">
-                  <tr>
-                    <th class="px-4 py-2">Name</th>
-                    <th class="px-4 py-2">Position</th>
-                    <th class="px-4 py-2">Team</th>
-                    <th class="px-4 py-2 w-16">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="player in playerPool" :key="player.id" class="border-t border-gray-600">
-                    <td class="px-4 py-2">{{ player.name }}</td>
-                    <td class="px-4 py-2">{{ player.position }}</td>
-                    <td class="px-4 py-2">{{ player.team }}</td>
-                    <td class="px-4 py-2">
-                      <button
-                        @click="removePlayer(player.id)"
-                        class="text-red-400 hover:text-red-300 transition-colors"
-                        title="Remove player"
-                      >
-                        <TrashIcon class="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="playerPool.length === 0">
-                    <td colspan="4" class="px-4 py-4 text-center text-gray-400">
-                      No players added yet. Add players to start the draft.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          <div class="flex justify-between items-center">
-            <div class="text-gray-400" v-if="!currentRoom.guestId">
-              Waiting for opponent to join...
-            </div>
-            <div class="text-green-400" v-else>
-              {{ guestName }} has joined the room!
-            </div>
-            
-            <button
-              @click="startDraft"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-md transition-colors"
-              :disabled="playerPool.length === 0 || !currentRoom.guestId"
-            >
-              Start Draft!
-            </button>
-          </div>
-        </div>
+        </Card>
       </div>
     </div>
     <div v-else class="text-center py-12">
-      <h2 class="text-2xl font-bold mb-4">Access Denied</h2>
-      <p class="text-gray-400">You are not the host of this room.</p>
-      <router-link to="/" class="text-blue-400 hover:text-blue-300 mt-4 inline-block">
-        Return to Home
-      </router-link>
+      <Card>
+        <h2 class="text-2xl font-bold mb-4">Access Denied</h2>
+        <p class="text-gray-400">You are not the host of this room.</p>
+        <router-link to="/" class="text-blue-400 hover:text-blue-300 mt-4 inline-block">
+          Return to Home
+        </router-link>
+      </Card>
     </div>
   </template>
   
@@ -154,7 +152,10 @@
   import { ref, computed, onMounted, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import { useDraftStore } from '../stores/draft';
-  import { ClipboardIcon, TrashIcon } from 'lucide-vue-next';
+  import Card from '../components/ui/Card.vue';
+  import Button from '../components/ui/Button.vue';
+  import Input from '../components/ui/Input.vue';
+  import Table from '../components/ui/Table.vue';
   
   const props = defineProps({
     roomId: {
@@ -250,7 +251,7 @@
   function copyRoomLink() {
     const link = `${window.location.origin}/join/${props.roomId}`;
     navigator.clipboard.writeText(link);
-    // In a real app, you'd show a toast notification here
+    // You might want to add a toast notification here
   }
   
   function startDraft() {
